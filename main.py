@@ -1,3 +1,14 @@
+#************************************************************************************
+# Purpose: Pulls data from http://zimas.lacity.org/
+# Inputs:  houseNum, steetName: the address to search
+# Returns: dict of the Zimas data
+# Title:    main.py
+# Author:  Bob Frederick
+# Date Created:   2018-09-12 16:39:24
+# TODO:    Add a try catch or except to catch the data tabs that aren't always visible.
+#          Build an error handler for incorrect user input
+#************************************************************************************
+
 def main():
 
     #import modules/libraries []
@@ -15,14 +26,17 @@ def main():
     streetName = 'Berenice'
 
     '''Setup Chrome Webdriver'''
-    # Create a new instance of the Chrome driver and set options
+    # create a new instance of the Chrome driver and set options
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--ignore-ssl-errors')
-    #Set ChromeDriver path
+    # set the options to run headless
+    #options.add_argument('--headless')
+    #options.add_argument('--disable-gpu')
+    # set ChromeDriver path
     dir_path = os.path.dirname(os.path.realpath(__file__))
     
-    #Set os environment and check platform
+    # set os environment and check platform
     if platform == "linux" or platform == "linux2":
         chromedriver = dir_path + "/chromedriver.exe"
     elif platform == "darwin":
@@ -38,7 +52,7 @@ def main():
     driver.get("http://zimas.lacity.org")
     # find the element that's name attribute is btn (the accept user agreement button)
     userAgreement = driver.find_element_by_class_name('btnaccept')
-    # accept the agreement
+    # accept the agreement 
     userAgreement.click()
 
     '''Address Input'''
@@ -55,53 +69,45 @@ def main():
     goBtn = driver.find_element_by_id("btnSearchGo")
     goBtn.click()
 
-    '''Load Data'''
+    '''Load Data from UI'''
     # wait until the ALL Zimas Data Tabs are loaded
     ZimasDataElement = wait.until(EC.visibility_of_all_elements_located((By.ID, "divDataTabs")))
     # open all the data tabs by clicking them
-
-    '''Different Methods for opening the tabs'''
-    #this one tries to have a filter for the first tab since it opens on start (still having trouble)
-    #dataTabs = driver.find_elements_by_xpath("//a[@onclick='toggleDataTab(this);'][not(contains(text(),'Address'))]")
-    #this just uses xpath
-    #dataTabs = driver.find_elements_by_xpath("//a[@onclick='toggleDataTab(this);']") 
-
-    #This method just looks for a unique css onclick value
+    # this method just looks for a unique css onclick value to find the dropdown tabs and opens those tabs
     dataTabs = driver.find_elements_by_css_selector("a[onclick*=toggleDataTab]")
-    #Instead of the filter we just start the loop at 1 and skip opening the already open tab
+    # The first tab is open by defalult so instead of filtering that tab we just start the loop at 1 and skip opening that tab
+    # TODO(bfrederick@rchstudios.com): This click fails sometimes because all of the tabs aren't immediately visible. We might use the Selenium wait.
     for i in range(1,len(dataTabs)):
         dataTabs[i].click()
 
-    '''Address/Legal'''
-    # get all the Address/Legal Data in Keys and Values and build a Dict
-    Address_Legal_Data = {}
-    legalRawData = []
-    legalKeys = []
-    legalValues = []
-    #Get single data tab
-    legalDataTable = driver.find_element_by_xpath("//div[@id='divTab1']/table/tbody")
-    #Get all data tab
-    #legalDataTable = driver.find_elements_by_xpath
+    '''Get & Process Data'''
+    # get all the raw data from the Zimas information tab in Keys and Values and build a Dict
+    zimasData = {}
+    rawData = []
+    dataKeys = []
+    dataValues = []
+    # get all the tables for each section i.e. Address, Zoning, Assessor
+    dataTables = driver.find_elements_by_xpath("//div[contains(@id,'divTab')]/table/tbody")
 
-    #Get the row and cols
-    for rows in legalDataTable.find_elements_by_xpath('.//tr'):
-        for col in rows.find_elements_by_xpath('.//td'):
-            legalRawData.append(col.get_attribute('innerText'))
-    #print(legalRawData)
-
-    #Separate the raw data into values and keys     
-    for num in range(len(legalRawData)):
+    # add raw data to a list
+    for rows in dataTables:
+        rawData.append(rows.text)
+ 
+    # separate the raw data into values and keys     
+    for num in range(len(rawData)):
         if num % 2 == 0:
-            legalKeys.append(legalRawData[num])
+            dataKeys.append(rawData[num])
         else:
-            legalValues.append(legalRawData[num])
+            dataValues.append(rawData[num])
 
-    #Make the dictionary
-    Address_Legal_Data = dict(zip(legalKeys,legalValues))
+    # make the dictionary
+    zimasData = dict(zip(dataKeys,dataValues))
 
-    for k, v in Address_Legal_Data.items():
+    # print values to check
+    for k, v in zimasData.items():
         print(k,v)
 
+    # close chromedriver
     driver.quit()
 
 if __name__ == "__main__":
