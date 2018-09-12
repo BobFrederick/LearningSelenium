@@ -8,6 +8,7 @@ def main():
     from selenium.webdriver.support.ui import WebDriverWait # available since 2.4.0
     from selenium.webdriver.support import expected_conditions as EC # available since 2.26.0
     import os
+    from sys import platform
 
     # Primary User Input
     houseNum = '4402'
@@ -20,8 +21,15 @@ def main():
     options.add_argument('--ignore-ssl-errors')
     #Set ChromeDriver path
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    chromedriver = dir_path + "/chromedriver"
-    #Set os environment
+    
+    #Set os environment and check platform
+    if platform == "linux" or platform == "linux2":
+        chromedriver = dir_path + "/chromedriver.exe"
+    elif platform == "darwin":
+        chromedriver = dir_path + "/chromedriver"
+    elif platform == "win32":
+        chromedriver = dir_path + "/chromedriver.exe"
+
     os.environ["webdriver.chrome.driver"] = chromedriver
     driver = webdriver.Chrome(chrome_options=options, executable_path=chromedriver)
 
@@ -70,7 +78,10 @@ def main():
     legalRawData = []
     legalKeys = []
     legalValues = []
+    #Get single data tab
     legalDataTable = driver.find_element_by_xpath("//div[@id='divTab1']/table/tbody")
+    #Get all data tab
+    #legalDataTable = driver.find_elements_by_xpath
 
     #Get the row and cols
     for rows in legalDataTable.find_elements_by_xpath('.//tr'):
@@ -88,7 +99,8 @@ def main():
     #Make the dictionary
     Address_Legal_Data = dict(zip(legalKeys,legalValues))
 
-    print(Address_Legal_Data)
+    for k, v in Address_Legal_Data.items():
+        print(k,v)
 
     driver.quit()
 
