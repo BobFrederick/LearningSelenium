@@ -31,8 +31,8 @@ def main():
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--ignore-ssl-errors')
     # set the options to run headless
-    #options.add_argument('--headless')
-    #options.add_argument('--disable-gpu')
+    options.add_argument('--headless')
+    options.add_argument('--disable-gpu')
     # set ChromeDriver path
     dir_path = os.path.dirname(os.path.realpath(__file__))
     
